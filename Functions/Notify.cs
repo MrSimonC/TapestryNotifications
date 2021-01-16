@@ -5,7 +5,6 @@ using Microsoft.Extensions.Logging;
 using PuppeteerSharp;
 using System;
 using System.Linq;
-using TapestryNotifications.Entities;
 
 namespace TapestryNotifications.Functions
 {
@@ -42,16 +41,16 @@ namespace TapestryNotifications.Functions
             await page.Keyboard.PressAsync("Enter");
             await page.WaitForSelectorAsync("#userDropDownContainer");
 
+            // Get all observation details
             string? html = await page.GetContentAsync();
             HtmlDocument? doc = new HtmlDocument();
             doc.LoadHtml(html);
-
             var observationsCollection = doc.GetElementbyId("oljPages");
             var obs = observationsCollection.Descendants()
                 .Where(oc => oc.Attributes["class"]?.Value.Contains("observation-item") ?? false)
                 .Select(oi => oi.Descendants()
                     .Where(oi => oi.Attributes["class"]?.Value.Contains("media-heading") ?? false)
-                    .Select(mh => new WorkingObservation { 
+                    .Select(mh => new ExpandedObservation { 
                         Title = mh.Element("a")?.InnerText.Trim('\n').Trim() ?? "", 
                         Id = oi.Attributes["data-obs-id"].Value,
                         Url = mh.Element("a")?.Attributes["href"].Value ?? ""
@@ -60,24 +59,26 @@ namespace TapestryNotifications.Functions
                 .Where(x => x != null)
                 .ToList();
 
+            // get more detail in each one
             foreach (var ob in obs)
             {
                 await page.GoToAsync(ob.Url);
                 html = await page.GetContentAsync();
                 doc.LoadHtml(html);
-
                 ob.Description = Helpers.CleanText(doc.DocumentNode.Descendants().Where(x => x.HasClass("page-note")).FirstOrDefault()?.InnerText) ?? "";
                 ob.LatestUpdate = Helpers.CleanText(doc.GetElementbyId("oljComments")?.InnerText) ?? "";
             }
+            
+            
+            // if entity is new then 
+            // send prowl
+
+            // if it is not new
+            // if latestUpdate has changed
+            // send prowl of title + latest update
 
             // log out
             await page.GoToAsync("https://tapestryjournal.com/logout");
         }
-    }
-
-    public class WorkingObservation : Observation
-    {
-        public string Id { get; set; } = "";
-        public string Url { get; set; } = "";
     }
 }
