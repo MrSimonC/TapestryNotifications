@@ -36,29 +36,42 @@ namespace TapestryNotifications.Functions
             // Login
             log.LogInformation($"going to url {url}");
             await page.GoToAsync(url);
-            //await page.WaitForSelectorAsync("#email_generated_id");
-            //await page.TypeAsync("#email_generated_id", email);
-            //await page.TypeAsync("#password_generated_id", password);
-            //await page.Keyboard.PressAsync("Enter");
+            await page.WaitForSelectorAsync("#email_generated_id");
+            await page.TypeAsync("#email_generated_id", email);
+            await page.TypeAsync("#password_generated_id", password);
+            await page.Keyboard.PressAsync("Enter");
+            await page.WaitForSelectorAsync("#userDropDownContainer");
 
             string? html = await page.GetContentAsync();
             HtmlDocument? doc = new HtmlDocument();
             doc.LoadHtml(html);
 
-
-            // TODO - debug below
             var observationsCollection = doc.GetElementbyId("oljPages");
             var obs = observationsCollection.Descendants()
-                .Where(oc => oc.Attributes["class"].Value.Contains("observation-item"))
+                .Where(oc => oc.Attributes["class"]?.Value.Contains("observation-item") ?? false)
                 .Select(oi => oi.Descendants()
-                    .Where(oi => oi.Attributes["class"].Value.Contains("media-heading"))
+                    .Where(oi => oi.Attributes["class"]?.Value.Contains("media-heading") ?? false)
                     .Select(mh => new WorkingObservation { 
-                        Title = mh.InnerText, 
+                        Title = mh.Element("a")?.InnerText.Trim('\n').Trim() ?? "", 
                         Id = oi.Attributes["data-obs-id"].Value,
-                        Url = mh.Attributes["a"].Value
+                        Url = mh.Element("a")?.Attributes["href"].Value ?? ""
                     }).FirstOrDefault()
-                ).ToList();
+                )
+                .Where(x => x != null)
+                .ToList();
 
+            foreach (var ob in obs)
+            {
+                await page.GoToAsync(ob.Url);
+                html = await page.GetContentAsync();
+                doc.LoadHtml(html);
+
+                ob.Description = Helpers.CleanText(doc.DocumentNode.Descendants().Where(x => x.HasClass("page-note")).FirstOrDefault()?.InnerText) ?? "";
+                ob.LatestUpdate = Helpers.CleanText(doc.GetElementbyId("oljComments")?.InnerText) ?? "";
+            }
+
+            // log out
+            await page.GoToAsync("https://tapestryjournal.com/logout");
         }
     }
 

@@ -17,8 +17,8 @@ namespace TapestryNotifications.Entities
         public void SetDescription(string description) => Description = description;
 
         [JsonProperty("latestupdate")]
-        public bool LatestUpdate { get; set; } = true;
-        public void SetLatestUpdate(bool latestUpdate) => LatestUpdate = latestUpdate;
+        public string LatestUpdate { get; set; } = "";
+        public void SetLatestUpdate(string latestUpdate) => LatestUpdate = latestUpdate;
 
         [FunctionName(nameof(Observation))]
         public static Task Run([EntityTrigger] IDurableEntityContext ctx) => ctx.DispatchAsync<Observation>();

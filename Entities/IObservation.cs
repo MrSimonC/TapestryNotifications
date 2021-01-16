@@ -3,7 +3,7 @@
     public interface IObservation
     {
         void SetDescription(string description);
-        void SetLatestUpdate(bool latestUpdate);
+        void SetLatestUpdate(string latestUpdate);
         void SetTitle(string title);
     }
 }
