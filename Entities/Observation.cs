@@ -10,17 +10,29 @@ namespace TapestryNotifications.Entities
     {
         [JsonProperty("title")]
         public string Title { get; set; } = "";
-        public void SetTitle(string title) => Title = title;
+        public void SetTitle(string title)
+        {
+            Title = title;
+        }
 
         [JsonProperty("description")]
         public string Description { get; set; } = "";
-        public void SetDescription(string description) => Description = description;
+        public void SetDescription(string description)
+        {
+            Description = description;
+        }
 
         [JsonProperty("latestupdate")]
         public string LatestUpdate { get; set; } = "";
-        public void SetLatestUpdate(string latestUpdate) => LatestUpdate = latestUpdate;
+        public void SetLatestUpdate(string latestUpdate)
+        {
+            LatestUpdate = latestUpdate;
+        }
 
         [FunctionName(nameof(Observation))]
-        public static Task Run([EntityTrigger] IDurableEntityContext ctx) => ctx.DispatchAsync<Observation>();
+        public static Task Run([EntityTrigger] IDurableEntityContext ctx)
+        {
+            return ctx.DispatchAsync<Observation>();
+        }
     }
 }

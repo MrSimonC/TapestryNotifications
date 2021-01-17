@@ -13,14 +13,14 @@ namespace TapestryNotifications
     {
         public override void Configure(IFunctionsHostBuilder builder)
         {
-            BrowserFetcherOptions? bfOptions = new BrowserFetcherOptions();
+            var bfOptions = new BrowserFetcherOptions();
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
                 bfOptions.Path = Path.GetTempPath();
             }
-            BrowserFetcher? bf = new BrowserFetcher(bfOptions);
+            var bf = new BrowserFetcher(bfOptions);
             bf.DownloadAsync(BrowserFetcher.DefaultRevision).Wait();
-            AppInfo? info = new AppInfo
+            var info = new AppInfo
             {
                 BrowserExecutablePath = bf.GetExecutablePath(BrowserFetcher.DefaultRevision)
             };

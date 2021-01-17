@@ -5,6 +5,8 @@ using Microsoft.Extensions.Logging;
 using PuppeteerSharp;
 using System;
 using System.Linq;
+using System.Threading;
+using TapestryNotifications.Models;
 
 namespace TapestryNotifications.Functions
 {
@@ -12,12 +14,15 @@ namespace TapestryNotifications.Functions
     {
         private readonly AppInfo? AppInfo;
 
-        public Notify(AppInfo appInfo) => AppInfo = appInfo;
+        public Notify(AppInfo appInfo)
+        {
+            AppInfo = appInfo;
+        }
 
         [FunctionName("Notify")]
-        public async System.Threading.Tasks.Task RunAsync([TimerTrigger("0 0 * * * *", RunOnStartup =true)] TimerInfo myTimer,
+        public async System.Threading.Tasks.Task RunAsync([TimerTrigger("0 0 * * * *", RunOnStartup = true)] TimerInfo myTimer,
             ILogger log,
-            [DurableClient] IDurableEntityClient client)
+            [DurableClient] IDurableEntityClient durableClient)
         {
             Browser browser = await Puppeteer.LaunchAsync(new LaunchOptions
             {
@@ -25,9 +30,11 @@ namespace TapestryNotifications.Functions
                 ExecutablePath = AppInfo?.BrowserExecutablePath ?? throw new NullReferenceException("Can't find browser path")
             });
 
+            // make new browser
             Page page = await browser.NewPageAsync();
             await page.SetUserAgentAsync("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.50 Safari/537.36");
 
+            // set up variables
             string url = Environment.GetEnvironmentVariable("TAPESTRY_URL") ?? throw new NullReferenceException("TAPESTRY_URL");
             string email = Environment.GetEnvironmentVariable("TAPESTRY_EMAIL") ?? throw new NullReferenceException("TAPESTRY_USERNAME");
             string password = Environment.GetEnvironmentVariable("TAPESTRY_PASSWORD") ?? throw new NullReferenceException("TAPESTRY_PASSWORD");
@@ -43,39 +50,35 @@ namespace TapestryNotifications.Functions
 
             // Get all observation details
             string? html = await page.GetContentAsync();
-            HtmlDocument? doc = new HtmlDocument();
+            var doc = new HtmlDocument();
             doc.LoadHtml(html);
-            var observationsCollection = doc.GetElementbyId("oljPages");
-            var obs = observationsCollection.Descendants()
+            HtmlNode? observationsCollection = doc.GetElementbyId("oljPages");
+            var observations = observationsCollection.Descendants()
                 .Where(oc => oc.Attributes["class"]?.Value.Contains("observation-item") ?? false)
                 .Select(oi => oi.Descendants()
                     .Where(oi => oi.Attributes["class"]?.Value.Contains("media-heading") ?? false)
-                    .Select(mh => new ExpandedObservation { 
-                        Title = mh.Element("a")?.InnerText.Trim('\n').Trim() ?? "", 
+                    .Select(mh => new ExpandedObservation
+                    {
+                        Title = mh.Element("a")?.InnerText.Trim('\n').Trim() ?? "",
                         Id = oi.Attributes["data-obs-id"].Value,
                         Url = mh.Element("a")?.Attributes["href"].Value ?? ""
                     }).FirstOrDefault()
                 )
                 .Where(x => x != null)
                 .ToList();
-
             // get more detail in each one
-            foreach (var ob in obs)
+            foreach (ExpandedObservation? ob in observations)
             {
                 await page.GoToAsync(ob.Url);
                 html = await page.GetContentAsync();
                 doc.LoadHtml(html);
                 ob.Description = Helpers.CleanText(doc.DocumentNode.Descendants().Where(x => x.HasClass("page-note")).FirstOrDefault()?.InnerText) ?? "";
                 ob.LatestUpdate = Helpers.CleanText(doc.GetElementbyId("oljComments")?.InnerText) ?? "";
+                Thread.Sleep(1000); // time given to tapestry website
             }
-            
-            
-            // if entity is new then 
-            // send prowl
 
-            // if it is not new
-            // if latestUpdate has changed
-            // send prowl of title + latest update
+            var process = new SaveCompareNotify(log);
+            await process.SaveAndNotify(durableClient, "tapestry", observations);
 
             // log out
             await page.GoToAsync("https://tapestryjournal.com/logout");

@@ -1,6 +1,6 @@
 ﻿using TapestryNotifications.Entities;
 
-namespace TapestryNotifications.Functions
+namespace TapestryNotifications.Models
 {
     public class ExpandedObservation : Observation
     {
