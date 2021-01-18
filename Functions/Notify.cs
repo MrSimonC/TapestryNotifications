@@ -24,6 +24,8 @@ namespace TapestryNotifications.Functions
             ILogger log,
             [DurableClient] IDurableEntityClient durableClient)
         {
+            void logInfo(string message) => log.LogInformation($"{nameof(Notify)}: {message}");
+            logInfo("Function has started");
             Browser browser = await Puppeteer.LaunchAsync(new LaunchOptions
             {
                 Headless = true,
@@ -31,16 +33,18 @@ namespace TapestryNotifications.Functions
             });
 
             // make new browser
+            logInfo("Make browser");
             Page page = await browser.NewPageAsync();
             await page.SetUserAgentAsync("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.50 Safari/537.36");
 
             // set up variables
+            logInfo("set up variables");
             string url = Environment.GetEnvironmentVariable("TAPESTRY_URL") ?? throw new NullReferenceException("TAPESTRY_URL");
             string email = Environment.GetEnvironmentVariable("TAPESTRY_EMAIL") ?? throw new NullReferenceException("TAPESTRY_USERNAME");
             string password = Environment.GetEnvironmentVariable("TAPESTRY_PASSWORD") ?? throw new NullReferenceException("TAPESTRY_PASSWORD");
 
             // Login
-            log.LogInformation($"going to url {url}");
+            logInfo($"going to url {url}");
             await page.GoToAsync(url);
             await page.WaitForSelectorAsync("#email_generated_id");
             await page.TypeAsync("#email_generated_id", email);
@@ -49,6 +53,7 @@ namespace TapestryNotifications.Functions
             await page.WaitForSelectorAsync("#userDropDownContainer");
 
             // Get all observation details
+            logInfo("Get all observation details");
             string? html = await page.GetContentAsync();
             var doc = new HtmlDocument();
             doc.LoadHtml(html);
@@ -77,10 +82,12 @@ namespace TapestryNotifications.Functions
                 Thread.Sleep(1000); // time given to tapestry website
             }
 
+            logInfo("call SaveCompareNotify()");
             var process = new SaveCompareNotify(log);
             await process.SaveAndNotify(durableClient, "tapestry", observations);
 
             // log out
+            logInfo("Log out");
             await page.GoToAsync("https://tapestryjournal.com/logout");
         }
     }
