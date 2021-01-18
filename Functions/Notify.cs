@@ -20,7 +20,7 @@ namespace TapestryNotifications.Functions
         }
 
         [FunctionName("Notify")]
-        public async System.Threading.Tasks.Task RunAsync([TimerTrigger("0 0 * * * *", RunOnStartup = true)] TimerInfo myTimer,
+        public async System.Threading.Tasks.Task RunAsync([TimerTrigger("0 5 7-18 * * *")] TimerInfo myTimer, // 7:05->18:05 hourly
             ILogger log,
             [DurableClient] IDurableEntityClient durableClient)
         {
