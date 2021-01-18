@@ -3,6 +3,7 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <AzureFunctionsVersion>v3</AzureFunctionsVersion>
     <Nullable>enable</Nullable>
+    <UserSecretsId>2ce450b3-4446-4da6-8528-ba019d94d5cf</UserSecretsId>
   </PropertyGroup>
   <ItemGroup>
     <Compile Remove="Prowl\**" />
@@ -11,6 +12,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="HtmlAgilityPack" Version="1.11.29" />
+    <PackageReference Include="Microsoft.ApplicationInsights.WorkerService" Version="2.15.0" />
     <PackageReference Include="Microsoft.NET.Sdk.Functions" Version="3.0.11" />
     <PackageReference Include="PuppeteerSharp" Version="2.0.4" />
     <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.DurableTask" Version="2.4.0" />
