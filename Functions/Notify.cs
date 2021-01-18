@@ -26,7 +26,7 @@ namespace TapestryNotifications.Functions
         {
             Browser browser = await Puppeteer.LaunchAsync(new LaunchOptions
             {
-                Headless = false,
+                Headless = true,
                 ExecutablePath = AppInfo?.BrowserExecutablePath ?? throw new NullReferenceException("Can't find browser path")
             });
 
