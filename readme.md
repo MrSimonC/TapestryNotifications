@@ -59,3 +59,7 @@ So if you've not guessed by now, every hour, a Timer Azure Function wakes up. It
 ## Conclusion
 
 This whole repo took me a couple of nights to set up *(when else do I have the time? 😆)* but in effect, I can now work, homeschool AND have my phone pop up important push notifications as I go through my day. This frees my evenings to relax, rather than stressing about the next day - as we all have enough to think about now a days.
+
+## Images
+
+![iphone-notification](readme/../readme-images/iphone-notification.jpg) ![iphone-notification-expanded](readme-images/iphone-notification-expanded.jpg)
